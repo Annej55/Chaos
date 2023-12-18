@@ -14,21 +14,22 @@ def driver():
     num_points - the number of points in both x and y to plot as initial conditions to fill out the map
     manifold_appx_dist - how far from the fixed point along the eigenvectors to begin iterating to approximate the manifolds
     '''
-    x0 = .2
-    y0 = .3
-    N = 100
-    k = (np.pi/2)**2
-    num_points = 25
+    x0 = .3 # random.uniform(-0.5,0.5)
+    y0 = .4 # random.uniform(-0.5,0.5)
+    N = 2000
+    k = 0.25
+    num_points = 50
     manifold_appx_dist = 1e-10
+    randomness = 0
 
     # plots a single trajectory in the standard map starting from (x0, y0)
-    # plot_trajectory(x0, y0, N, k, '.') 
+    plot_trajectory(random.uniform(-0.5,0.5), random.uniform(-0.5,0.5), 10000, k, '.') 
  
     # plots general picture of entire map, optionally plots separatrix, manifold approximation, and a particular intial value
     # see function def for details
-    plot_map(N, k, num_points, x0, y0, manifold_appx_dist, init_val_on = True, sep_on = True, manifold_on = True, point_type = ',', a = 0.5, b = 0.5)
+    plot_map(N, k, num_points, x0, y0, randomness, manifold_appx_dist, init_val_on = True, sep_on = True, manifold_on = True, point_type = ',', a = 0.5, b = 0.5)
 
-def plot_map(N, k, num_points, x_init, y_init, manifold_appx_dist, init_val_on = False, sep_on = False, manifold_on = False, point_type = ',', a = 0.5, b = 0.5):
+def plot_map(N, k, num_points, x_init, y_init, rand = 1, manifold_appx_dist = 1e-10, init_val_on = False, sep_on = False, manifold_on = False, point_type = ',', a = 0.5, b = 0.5):
     '''
     Plots num_points^2 intial conditions to get a general picture of the behavior of the standard map.
     Also plots the following (though these can be turned on or off with the boolean inputs):
@@ -47,23 +48,27 @@ def plot_map(N, k, num_points, x_init, y_init, manifold_appx_dist, init_val_on =
     - b - y value max of plot
     Output: plot of standard map
     '''
+    # random.seed(5)
+    x0, y0 = pts_2d_interval(a, b, rand, num_points)
 
-    x0 = np.linspace(-a, a, num_points)
-    y0 = np.linspace(-b, b, num_points)
     if manifold_on:
         eigvals, eigvecs = Df_eigs(k, -0.5)
         eigvecs[:, 0] = normalize(eigvecs[:, 0])
         eigvecs[:, 1] = normalize(eigvecs[:, 1])
     if sep_on:
-        y_separatrix = (1/np.pi)*np.sqrt(k/2 + (k/2)*np.cos(2*np.pi*x0))
+        x_eq = np.linspace(-a,a,1000)
+        y_separatrix = (1/np.pi)*np.sqrt(k/2 + (k/2)*np.cos(2*np.pi*x_eq))
         # y_separatrix_2 = .5*np.sqrt(1 + (k/(np.pi))**2 + ((k/(np.pi))**2)*np.cos(4*np.pi*x0))
-    random.seed(3) # for colors
     plt.figure()    
 
     colors = ['#CC3366','#FF0066','#CC6699','#CC00FF','#9933FF','#9900FF','#00FFCC','#00FF33','#33CC00','#00CC99','#33CC99','#33FFFF','#33CCCC','#3399CC','#0000CC','#0099FF','#6633FF','#66CC99','#33CC66','#66CC00','#33FF33','#FF3333','#CC0033','#0000FF','#00CCFF','#CC0000']
     for i in range(num_points):
         for j in range(num_points):
             x_traj, y_traj = initial_condition_trajectory(x0[i], y0[j], k, N)
+            '''print('x trajectory: ')
+            print(x_traj)
+            print('y trajectory: ')
+            print(y_traj)'''
             plt.plot(x_traj,y_traj, point_type, color = random.choice(colors))
     c1 = 'blue'
     c2 = 'blue'
@@ -74,25 +79,25 @@ def plot_map(N, k, num_points, x_init, y_init, manifold_appx_dist, init_val_on =
         if eigvals[1] > 1:
             c2 = 'red'
         # plt.quiver(*origin, eigvecs[:, 0], eigvecs[:, 1], color=[c1, c2], scale=12) # plots eigenvectors
-    if init_val_on:
-        x_traj, y_traj = initial_condition_trajectory(x_init, y_init, k, N)
-        lbl = 'Trajectory from ('+str(x_init)+','+str(y_init)+')'
-        plt.plot(x_traj,y_traj,'.', color = 'b', label = lbl)
-        plt.plot(x_traj[0],y_traj[0], 'ro', label = 'starting point')
-        plt.plot(x_traj[N-1],y_traj[N-1], 'co', label = 'ending point')
-    if sep_on:
-        plt.plot(x0, y_separatrix, 'k,-', label='separatrix')
-        plt.plot(x0, -y_separatrix, 'k,-')
-        # plt.plot(x0, y_separatrix_2, 'k,-', label='secondary separatrix')
-        # plt.plot(x0, -y_separatrix_2+1, 'k,-')
     if manifold_on:
         x_man, y_man = iter_manifold(eigvecs, 0, 0.5, 0, manifold_appx_dist)
         x_traj, y_traj = initial_condition_trajectory(x_man, y_man, k, 5*N)
         lbl = 'Manifold approximation'
-        plt.plot(x_traj,y_traj,'m.', label = lbl)
+        plt.plot(x_traj,y_traj,'b.', label = lbl)
         x_man, y_man = iter_manifold(eigvecs, 1, 0.5, 0, manifold_appx_dist)
         x_traj, y_traj = initial_condition_trajectory(x_man, y_man, k, 5*N)
-        plt.plot(x_traj,y_traj,'m.')
+        plt.plot(x_traj,y_traj,'b.')
+    if init_val_on:
+        x_traj, y_traj = initial_condition_trajectory(x_init, y_init, k, N)
+        lbl = 'Trajectory from ('+n_digits_str(x_init, 6)+','+n_digits_str(y_init, 6)+')'
+        plt.plot(x_traj,y_traj,'.', color = 'm', label = lbl)
+        plt.plot(x_traj[0],y_traj[0], 'go', label = 'starting point')
+        plt.plot(x_traj[N-1],y_traj[N-1], 'co', label = 'ending point')
+    if sep_on:
+        plt.plot(x_eq, y_separatrix, 'k,-', label='separatrix')
+        plt.plot(x_eq, -y_separatrix, 'k,-')
+        # plt.plot(x0, y_separatrix_2, 'k,-', label='secondary separatrix')
+        # plt.plot(x0, -y_separatrix_2+1, 'k,-')
     plt.xlim(-a, a)
     plt.ylim(-b, b)
     plt.title('Standard Map with '+str(N)+' Iterations, k='+str(k))
@@ -112,7 +117,7 @@ def plot_trajectory(x0, y0, N, k, point_type = '.'):
     x_traj, y_traj = initial_condition_trajectory(x0, y0, k, N)
     plt.figure()    
     plt.plot(x_traj,y_traj,'b'+point_type, label= 'trajectory')
-    lbl = 'start ('+str(x0)+','+str(y0)+')'
+    lbl = 'start ('+n_digits_str(x0, 6)+','+n_digits_str(y0, 6)+')'
     plt.plot(x_traj[0],y_traj[0], 'ro', label = lbl)
     plt.plot(x_traj[N-1],y_traj[N-1], 'co', label = 'ending point')
     
@@ -204,6 +209,58 @@ def normalize(v):
     if norm < 1e-16: 
        return v
     return v / norm
+
+def pts_2d_interval(a, b, rand = 0, num_points = 100):
+    if rand == 0: # equispaced
+        x = np.linspace(-a, a, num_points)
+        y = np.linspace(-b, b, num_points)
+
+        return x, y
+    elif rand == 1: # random uniform points in equispaced intervals in the region
+        x = np.zeros(num_points)
+        y = np.zeros(num_points)
+
+        len_inter_a = 2*a/num_points
+        len_inter_b = 2*b/num_points
+        int_a_0 = -a
+        int_b_0 = -b
+        int_a_1 = -a + len_inter_a
+        int_b_1 = -b + len_inter_b
+
+        for j in range(num_points):
+            x[j] = random.uniform(int_a_0,int_a_1)
+            y[j] = random.uniform(int_b_0,int_b_1)
+            int_a_0 = int_a_1
+            int_b_0 = int_b_1
+            int_a_1 = int_a_1 + len_inter_a
+            int_b_1 = int_b_1 + len_inter_b
+        
+        return x, y
+    # else if rand == 2
+    # if rand == 2: random uniform points on the graph
+    x = np.zeros(num_points)
+    y = np.zeros(num_points)
+    for j in range(num_points):
+        x[j] = random.uniform(-a,a)
+        y[j] = random.uniform(-b,b)
+    return x, y
+
+def n_digits_str(x,n):
+    '''
+    Input: x is the number we want to return the first n characters of as a string
+    Output: x as a string with n characters
+    '''
+    n = n + 1 # account for decimal place character
+    sgn = np.sign(x)
+    xp = abs(x)
+    xp_str = str(xp)
+    if len(xp_str) <= n:
+        return str(x) 
+    #else
+    if sgn == 1: # if x was positive
+        return str(x)[:n]
+    #else
+    return str(x)[:(n+1)]
 
 driver()
 
